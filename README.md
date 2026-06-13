@@ -58,7 +58,10 @@ over a REST API.
 
 ## 🚀 Getting Started
 
+The frontend dashboard lives in the [`frontend/`](frontend) directory.
+
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
@@ -112,22 +115,25 @@ VITE_API_BASE_URL=http://localhost:5000/api
 ## 📁 Project Structure
 
 ```
-src/
-  components/
-    cards/    - KPI cards
-    charts/   - Recharts-based line/area/bar charts
-    layout/   - App shell, navbar
-    status/   - Temperature, flow, system status panels
-    tank/     - Animated tank visualization
-    alerts/   - Leak detection panel
-    common/   - Shared UI helpers (skeletons, empty/error states, table)
-    ui/       - shadcn/ui-style primitives
-  pages/      - Route-level pages (Dashboard, History, NotFound)
-  hooks/      - Data fetching & polling hooks
-  services/   - Axios API client and sensor service
-  types/      - Shared TypeScript types
-  contexts/   - Theme (light/dark) context
-  utils/      - Formatters, status helpers, chart helpers
+frontend/
+  src/
+    components/
+      cards/    - KPI cards
+      charts/   - Recharts-based line/area/bar charts
+      layout/   - App shell, navbar
+      status/   - Temperature, flow, system status panels
+      tank/     - Animated tank visualization
+      alerts/   - Leak detection panel
+      common/   - Shared UI helpers (skeletons, empty/error states, table)
+      ui/       - shadcn/ui-style primitives
+    pages/      - Route-level pages (Dashboard, History, NotFound)
+    hooks/      - Data fetching & polling hooks
+    services/   - Axios API client and sensor service
+    types/      - Shared TypeScript types
+    contexts/   - Theme (light/dark) context
+    utils/      - Formatters, status helpers, chart helpers
+C++/
+  Ultrasonic_sensor.ino  - ESP32 firmware (sensor reading & API)
 ```
 
 ---
