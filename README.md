@@ -1,22 +1,21 @@
 # Smart Water Tank Monitoring & Leak Detection System
 
-A modern, responsive frontend dashboard for an IoT smart water tank
-monitoring and leak detection system. The dashboard visualizes live
-sensor data (water level, tank fill percentage, flow rate, temperature,
-daily usage, and leak status) streamed from an ESP32-based backend over
-a REST API.
+This repository contains the source code for a Smart Water Tank Monitoring and Leak Detection System, designed to prevent water wastage and monitor tank levels in real-time.
 
-## Tech Stack
+## Project Architecture
 
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS + shadcn/ui-style components
-- Lucide React icons
-- React Router
-- Recharts
-- Axios
+The system consists of two main parts:
+1. **IoT Node (ESP32)**: Reads distance to water using an HC-SR04 ultrasonic sensor and exposes a JSON API over WiFi/Hotspot containing raw distance data.
+2. **Express Backend**: Polls the ESP32 sensor, calculates depth/volume/percentage metrics, manages historical logs, implements statistical leak detection using linear regression, and hosts interactive OpenAPI documentation.
+3. **Frontend Dashboard**: A modern, responsive React/TypeScript dashboard that visualizes live sensor data (water level, tank fill percentage, flow rate, temperature, daily usage, and leak status) streamed from the Express backend over a REST API.
 
-## Getting Started
+---
+
+## 🎨 Frontend Dashboard
+
+The frontend is a React 18 + Vite application using Tailwind CSS and shadcn/ui.
+
+### Getting Started
 
 ```bash
 npm install
@@ -25,70 +24,51 @@ npm run dev
 
 The app runs on `http://localhost:5173` by default.
 
-## API Configuration
+### API Configuration
 
 The dashboard expects a REST API exposing:
-
 - `GET /api/latest` — the most recent sensor reading
-- `GET /api/history?limit=50` — historical readings for charts and the
-  activity table
+- `GET /api/history?limit=50` — historical readings for charts and the activity table
 
-By default the API base URL is `http://localhost:5000/api`. To point at
-a different backend, create a `.env.local` file based on
-[`.env.example`](.env.example):
-
+By default the API base URL is `http://localhost:3000/api` (assuming backend runs on 3000). To point at a different backend, create a `.env.local` file based on [`.env.example`](.env.example):
 ```bash
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:3000/api
 ```
 
-### Expected response shapes
+---
 
-`GET /api/latest`
+## ⚙️ Backend Setup
 
+The Express backend is located in the [/backend](./backend) folder.
+For installation instructions, API route specifications, and details about the leak-detection algorithm, please refer to the:
+📄 **[Backend README](./backend/README.md)**
+
+To run the backend server and its local ESP32 simulation utility:
+1. Move to the backend folder:
+   ```bash
+   cd backend
+   ```
+2. Install the node packages:
+   ```bash
+   npm install
+   ```
+3. Run the simulator (to mock sensor reads):
+   ```bash
+   npm run mock
+   ```
+4. Run the backend API server (runs on port 3000):
+   ```bash
+   npm run dev
+   ```
+
+### 🔌 IoT ESP32 Firmware
+A sketch example of the firmware is provided in the repository configuration. It connects to a local WiFi/hotspot, initializes the trigger and echo pins for the ultrasonic sensor, and spins up a web server on port 80.
+When the backend requests `http://<ESP32_IP>/`, it responds with:
 ```json
 {
-  "waterLevel": 72,
-  "tankPercentage": 81,
-  "flowRate": 4.3,
-  "temperature": 28.7,
-  "dailyUsage": 183,
-  "leakStatus": "Normal",
-  "timestamp": "2026-06-13T10:20:00"
+  "device": "ESP32",
+  "sensor": "HC-SR04",
+  "distance_cm": 45.2,
+  "status": "ok"
 }
 ```
-
-`GET /api/history`
-
-```json
-[
-  { "timestamp": "...", "waterLevel": 70, "flowRate": 4, "temperature": 28 }
-]
-```
-
-## Project Structure
-
-```
-src/
-  components/
-    cards/    - KPI cards
-    charts/   - Recharts-based line/area/bar charts
-    layout/   - App shell, navbar
-    status/   - Temperature, flow, system status panels
-    tank/     - Animated tank visualization
-    alerts/   - Leak detection panel
-    common/   - Shared UI helpers (skeletons, empty/error states, table)
-    ui/       - shadcn/ui-style primitives
-  pages/      - Route-level pages (Dashboard, History, NotFound)
-  hooks/      - Data fetching & polling hooks
-  services/   - Axios API client and sensor service
-  types/      - Shared TypeScript types
-  contexts/   - Theme (light/dark) context
-  utils/      - Formatters, status helpers, chart helpers
-```
-
-## Scripts
-
-- `npm run dev` — start the dev server
-- `npm run build` — type-check and build for production
-- `npm run preview` — preview the production build
-- `npm run lint` — run ESLint
