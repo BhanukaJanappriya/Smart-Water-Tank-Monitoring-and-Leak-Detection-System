@@ -9,7 +9,8 @@ import swaggerUi from 'swagger-ui-express';
 import config from './config.js';
 import tankRoutes from './routes/tankRoutes.js';
 import { fetchESP32Data } from './services/esp32Service.js';
-import { addReading } from './services/leakDetectionService.js';
+import { addReading, loadHistoryFromDb } from './services/leakDetectionService.js';
+import { initDb, close as closeDb } from './services/dbService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,7 +54,7 @@ let pollingIntervalId = null;
 async function pollDevice() {
   console.log(`[Polling Worker] Fetching sensor data from ESP32 at ${config.esp32Url}...`);
   const rawData = await fetchESP32Data();
-  const processed = addReading(rawData);
+  const processed = await addReading(rawData);
   
   if (processed.metrics.isValid) {
     console.log(`[Polling Worker] Success: Distance: ${processed.sensor.rawDistanceCm}cm, Level: ${processed.metrics.percentage}%, Volume: ${processed.metrics.volumeLiters}L`);
@@ -81,9 +82,18 @@ function startPolling() {
 }
 
 // Start Server
-const server = app.listen(config.port, () => {
+const server = app.listen(config.port, async () => {
   console.log(`Server is running on port ${config.port}`);
   console.log(`Targeting ESP32 at: ${config.esp32Url}`);
+  
+  try {
+    // Initialize SQLite tables and preload cache from DB
+    await initDb();
+    await loadHistoryFromDb();
+  } catch (error) {
+    console.error('Failed to initialize database or preload history:', error.message);
+  }
+  
   startPolling();
 });
 
@@ -91,11 +101,16 @@ const server = app.listen(config.port, () => {
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
-function shutdown() {
+async function shutdown() {
   console.log('Shutting down server...');
   if (pollingIntervalId) {
     clearInterval(pollingIntervalId);
     console.log('Stopped background polling worker.');
+  }
+  try {
+    await closeDb();
+  } catch (err) {
+    console.error('Error during database close:', err.message);
   }
   server.close(() => {
     console.log('Server closed.');

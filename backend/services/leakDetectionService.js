@@ -1,7 +1,7 @@
 import config from '../config.js';
+import * as dbService from './dbService.js';
 
-// In-memory storage for readings and alerts
-// In a production app, this would be backed by a database like SQLite or PostgreSQL
+// In-memory cache for fast stream processing and leak detection
 const readingsHistory = [];
 const MAX_HISTORY_LIMIT = 1000; // Prevent memory leak
 
@@ -141,12 +141,12 @@ function evaluateLeak() {
 }
 
 /**
- * Process a new reading from the ESP32, update history, and check for alerts.
+ * Process a new reading from the ESP32, update history, log to database, and check for alerts.
  * 
  * @param {object} rawReading - Raw response object from ESP32 service
- * @returns {object} The fully processed status object
+ * @returns {Promise<object>} The fully processed status object
  */
-export function addReading(rawReading) {
+export async function addReading(rawReading) {
   const metrics = calculateMetrics(
     rawReading.success && rawReading.data ? rawReading.data.distance_cm : null,
     rawReading.success && rawReading.data ? rawReading.data.status : (rawReading.error || 'Connection Failed')
@@ -163,10 +163,17 @@ export function addReading(rawReading) {
     error: metrics.error || null
   };
 
-  // Add to history
+  // Add to in-memory history cache
   readingsHistory.push(processedReading);
   if (readingsHistory.length > MAX_HISTORY_LIMIT) {
-    readingsHistory.shift(); // Remove oldest reading
+    readingsHistory.shift();
+  }
+
+  // Persist reading to SQLite database
+  try {
+    await dbService.saveReading(processedReading);
+  } catch (err) {
+    console.error('[Leak Detection] Error saving reading to SQLite:', err.message);
   }
 
   // Run leak evaluation
@@ -212,6 +219,32 @@ export function addReading(rawReading) {
       message: `ESP32 Water Tank Sensor is offline: ${processedReading.error}`,
       timestamp: rawReading.timestamp
     });
+  }
+
+  // Determine resolved alerts (active alerts not in new alerts)
+  for (const oldAlert of activeAlerts) {
+    const stillActive = newAlerts.some(a => a.type === oldAlert.type);
+    if (!stillActive) {
+      try {
+        await dbService.resolveAlertByType(oldAlert.type);
+        console.log(`[Leak Detection] Alert resolved and logged: ${oldAlert.type}`);
+      } catch (err) {
+        console.error('[Leak Detection] Error resolving alert in SQLite:', err.message);
+      }
+    }
+  }
+
+  // Save brand new active alerts to SQLite
+  for (const alert of newAlerts) {
+    const isAlreadyActive = activeAlerts.some(a => a.type === alert.type);
+    if (!isAlreadyActive) {
+      try {
+        await dbService.saveAlert(alert);
+        console.warn(`[Leak Detection] New Alert logged to SQLite: ${alert.type} (${alert.severity})`);
+      } catch (err) {
+        console.error('[Leak Detection] Error logging alert to SQLite:', err.message);
+      }
+    }
   }
 
   activeAlerts = newAlerts;
@@ -269,11 +302,17 @@ export function getLatestStatus() {
 }
 
 /**
- * Returns the history of readings up to a limit.
+ * Returns the history of readings up to a limit by querying SQLite.
  */
-export function getHistory(limit = 100) {
-  const count = Math.min(limit, readingsHistory.length);
-  return readingsHistory.slice(-count);
+export async function getHistory(limit = 100) {
+  try {
+    return await dbService.fetchHistory(limit);
+  } catch (err) {
+    console.error('[Leak Detection] Error fetching history from SQLite:', err.message);
+    // Fallback to in-memory cache
+    const count = Math.min(limit, readingsHistory.length);
+    return readingsHistory.slice(-count);
+  }
 }
 
 /**
@@ -284,11 +323,60 @@ export function getActiveAlerts() {
 }
 
 /**
- * Manual trigger to clear all active alerts.
+ * Manual trigger to clear all active alerts in-memory and in SQLite.
  */
-export function clearActiveAlerts() {
+export async function clearActiveAlerts() {
   activeAlerts = [];
   if (latestProcessedStatus) {
     latestProcessedStatus.alerts = [];
+  }
+  try {
+    await dbService.resolveAllAlerts();
+  } catch (err) {
+    console.error('[Leak Detection] Error clearing alerts in SQLite:', err.message);
+  }
+}
+
+/**
+ * Pre-populates the in-memory cache and active alerts from SQLite on startup.
+ * Allows the leak detection algorithm to function immediately without waiting for polls.
+ */
+export async function loadHistoryFromDb() {
+  try {
+    const dbHistory = await dbService.fetchHistory(100);
+    readingsHistory.length = 0;
+    readingsHistory.push(...dbHistory);
+    console.log(`[Leak Detection] Preloaded ${dbHistory.length} historical readings from SQLite.`);
+
+    const dbAlerts = await dbService.fetchActiveAlerts();
+    activeAlerts.length = 0;
+    activeAlerts.push(...dbAlerts);
+    console.log(`[Leak Detection] Loaded ${dbAlerts.length} active alerts from SQLite.`);
+
+    if (dbHistory.length > 0) {
+      const lastReading = dbHistory[dbHistory.length - 1];
+      latestProcessedStatus = {
+        timestamp: lastReading.timestamp,
+        sensor: {
+          device: 'ESP32',
+          sensor: 'HC-SR04',
+          status: lastReading.sensorStatus,
+          rawDistanceCm: lastReading.distanceCm
+        },
+        metrics: {
+          waterDepthCm: lastReading.waterDepthCm,
+          percentage: lastReading.percentage,
+          volumeLiters: lastReading.volumeLiters,
+          isValid: lastReading.isValid
+        },
+        leakAnalysis: { 
+          isLeakDetected: activeAlerts.some(a => a.type === 'LEAK_DETECTED'), 
+          message: 'Restored from SQLite database' 
+        },
+        alerts: activeAlerts
+      };
+    }
+  } catch (error) {
+    console.error('[Leak Detection] Failed to load history from database:', error.message);
   }
 }

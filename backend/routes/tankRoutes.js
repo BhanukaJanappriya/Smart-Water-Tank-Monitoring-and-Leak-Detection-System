@@ -22,7 +22,7 @@ router.get('/status', async (req, res) => {
   if (forceFetch) {
     try {
       const rawData = await fetchESP32Data();
-      const status = addReading(rawData);
+      const status = await addReading(rawData);
       return res.json(status);
     } catch (error) {
       return res.status(500).json({ 
@@ -41,9 +41,17 @@ router.get('/status', async (req, res) => {
  * @desc Retrieve historical readings
  * @query {number} limit - Maximum number of history items to retrieve (default: 100)
  */
-router.get('/history', (req, res) => {
+router.get('/history', async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 100;
-  res.json(getHistory(limit));
+  try {
+    const history = await getHistory(limit);
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to retrieve history: ' + error.message 
+    });
+  }
 });
 
 /**
@@ -58,9 +66,16 @@ router.get('/alerts', (req, res) => {
  * @route POST /api/tank/alerts/clear
  * @desc Manually clear current active alerts
  */
-router.post('/alerts/clear', (req, res) => {
-  clearActiveAlerts();
-  res.json({ success: true, message: 'Active alerts cleared successfully.' });
+router.post('/alerts/clear', async (req, res) => {
+  try {
+    await clearActiveAlerts();
+    res.json({ success: true, message: 'Active alerts cleared successfully.' });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to clear alerts: ' + error.message 
+    });
+  }
 });
 
 /**
