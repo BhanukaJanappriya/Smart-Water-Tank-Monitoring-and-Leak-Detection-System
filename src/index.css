@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 173 80% 40%;
+    --secondary-foreground: 210 40% 98%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    --danger: 0 84% 60%;
+    --danger-foreground: 210 40% 98%;
+
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 217 91% 95%;
+    --accent-foreground: 217 91% 40%;
+
+    --border: 214 32% 89%;
+    --input: 214 32% 89%;
+    --ring: 217 91% 60%;
+
+    --tank-water: 199 89% 56%;
+    --tank-water-light: 199 89% 70%;
+
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 44% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 44% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 65%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 173 70% 45%;
+    --secondary-foreground: 222 47% 11%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 222 47% 11%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    --danger: 0 84% 65%;
+    --danger-foreground: 222 47% 11%;
+
+    --muted: 222 35% 16%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 60% 18%;
+    --accent-foreground: 217 91% 75%;
+
+    --border: 222 30% 20%;
+    --input: 222 30% 20%;
+    --ring: 217 91% 65%;
+
+    --tank-water: 199 89% 56%;
+    --tank-water-light: 199 89% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-card/70 dark:bg-card/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-glass dark:shadow-glass-dark rounded-2xl;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold tracking-tight text-foreground;
+  }
+
+  .section-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
