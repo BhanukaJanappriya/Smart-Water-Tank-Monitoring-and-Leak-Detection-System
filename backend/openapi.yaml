@@ -1,0 +1,299 @@
+openapi: 3.0.0
+info:
+  title: Smart Water Tank Monitoring & Leak Detection API
+  description: API for retrieving real-time water levels from ESP32, computing historical trends, and managing leak detection alerts.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development backend server
+paths:
+  /api/tank/status:
+    get:
+      summary: Get latest tank level metrics and leak status
+      description: Returns the latest processed reading, including water depth, percentage full, volume, and active alerts.
+      parameters:
+        - in: query
+          name: fetch
+          schema:
+            type: boolean
+          required: false
+          description: If true, bypasses the background cache and forces an immediate real-time fetch from the ESP32.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TankStatus'
+        '500':
+          description: Internal server error (e.g., when forced fetch fails)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tank/history:
+    get:
+      summary: Get historical readings
+      description: Returns a list of the most recent readings logged by the backend's background poll task.
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+          required: false
+          description: Maximum number of history items to return.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReadingLog'
+
+  /api/tank/alerts:
+    get:
+      summary: Get active alerts
+      description: Returns all currently active alerts, such as water level critical levels or potential leak detections.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+
+  /api/tank/alerts/clear:
+    post:
+      summary: Clear active alerts
+      description: Manually clears any active level or leak warnings from memory.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                example:
+                  success: true
+                  message: Active alerts cleared successfully.
+
+  /api/tank/config:
+    get:
+      summary: Get current tank physical and calibration configuration
+      description: Returns the active configuration parameters used for processing distance values and running leak tests.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TankConfig'
+    post:
+      summary: Update configuration dynamically
+      description: Updates physical dimensions or leak rate thresholds in-memory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TankConfigUpdate'
+      responses:
+        '200':
+          description: Configuration updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  currentConfig:
+                    $ref: '#/components/schemas/TankConfig'
+        '400':
+          description: Invalid parameters provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    TankStatus:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-06-13T08:00:00.000Z'
+        sensor:
+          type: object
+          properties:
+            device:
+              type: string
+              example: 'ESP32'
+            sensor:
+              type: string
+              example: 'HC-SR04'
+            status:
+              type: string
+              example: 'ok'
+            rawDistanceCm:
+              type: number
+              nullable: true
+              example: 45.2
+        metrics:
+          type: object
+          properties:
+            waterDepthCm:
+              type: number
+              example: 44.8
+            percentage:
+              type: number
+              example: 56.0
+            volumeLiters:
+              type: number
+              example: 126.7
+            isValid:
+              type: boolean
+              example: true
+        leakAnalysis:
+          type: object
+          properties:
+            isLeakDetected:
+              type: boolean
+              example: false
+            correlation:
+              type: number
+              nullable: true
+              example: -0.98
+            slopeCmPerMin:
+              type: number
+              nullable: true
+              example: -0.12
+            rateOfDropCmPerMin:
+              type: number
+              nullable: true
+              example: 0.12
+            dataPointsCount:
+              type: integer
+              example: 18
+            message:
+              type: string
+              example: 'No leak detected'
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+
+    ReadingLog:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        isValid:
+          type: boolean
+        distanceCm:
+          type: number
+          nullable: true
+        waterDepthCm:
+          type: number
+        percentage:
+          type: number
+        volumeLiters:
+          type: number
+        sensorStatus:
+          type: string
+        error:
+          type: string
+          nullable: true
+
+    Alert:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [LEAK_DETECTED, CRITICAL_LOW_WATER, CRITICAL_HIGH_WATER, SENSOR_OFFLINE]
+          example: 'LEAK_DETECTED'
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          example: 'CRITICAL'
+        message:
+          type: string
+          example: 'Potential water leak detected! Water level is dropping steadily.'
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: object
+          nullable: true
+
+    TankConfig:
+      type: object
+      properties:
+        port:
+          type: integer
+          example: 3000
+        esp32Url:
+          type: string
+          example: 'http://10.234.106.74'
+        pollIntervalMs:
+          type: integer
+          example: 10000
+        tankHeightCm:
+          type: number
+          example: 100.0
+        tankFullDistanceCm:
+          type: number
+          example: 10.0
+        tankEmptyDistanceCm:
+          type: number
+          example: 90.0
+        tankRadiusCm:
+          type: number
+          example: 30.0
+        leakThresholdCmPerMin:
+          type: number
+          example: 0.1
+
+    TankConfigUpdate:
+      type: object
+      properties:
+        esp32Url:
+          type: string
+        pollIntervalMs:
+          type: integer
+        tankHeightCm:
+          type: number
+        tankFullDistanceCm:
+          type: number
+        tankEmptyDistanceCm:
+          type: number
+        tankRadiusCm:
+          type: number
+        leakThresholdCmPerMin:
+          type: number
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: 'ESP32 device is offline'
