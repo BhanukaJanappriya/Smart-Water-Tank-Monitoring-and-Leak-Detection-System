@@ -5,7 +5,8 @@ import axios from "axios";
  * The base URL can be overridden via VITE_API_BASE_URL for different
  * deployment environments without touching component code.
  */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api/tank";
+console.log("Connecting to API at:", API_BASE_URL);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
