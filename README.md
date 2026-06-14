@@ -12,8 +12,6 @@ A modern, responsive frontend dashboard and Express backend for an **IoT-based s
 ![ESP32](https://img.shields.io/badge/ESP32-IoT%20Hardware-E7352C?logo=espressif&logoColor=white&style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-**Tags:** `iot` `esp32` `smart-water-tank` `leak-detection` `react` `typescript` `vite` `tailwindcss` `dashboard` `real-time-monitoring` `recharts` `embedded-systems` `water-management` `responsive-design` `nodejs` `express`
-
 ---
 
 ## 🏗️ Project Architecture
