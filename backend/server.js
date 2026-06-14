@@ -88,7 +88,7 @@ function startPolling() {
 }
 
 // Start Server
-const server = app.listen(config.port, async () => {
+const server = app.listen(config.port, '0.0.0.0', async () => {
   console.log(`Server is running on port ${config.port}`);
   console.log(`Targeting ESP32 at: ${config.esp32Url}`);
   
