@@ -7,6 +7,7 @@ import type { HistoryReading, LatestReading } from "@/types/sensor";
  */
 export async function fetchLatestReading(): Promise<LatestReading> {
   const { data } = await apiClient.get<LatestReading>("/latest");
+  console.log("Fetched latest reading from real backend:", data);
   return data;
 }
 
