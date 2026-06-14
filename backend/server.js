@@ -21,6 +21,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Request Logger
+app.use((req, res, next) => {
+  console.log(`[API] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  next();
+});
+
 // Load and serve OpenAPI document
 try {
   const yamlFile = fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8');

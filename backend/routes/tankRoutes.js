@@ -37,15 +37,47 @@ router.get('/status', async (req, res) => {
 });
 
 /**
+ * @route GET /api/tank/latest
+ * @desc Get latest tank reading in the format expected by the frontend
+ */
+router.get('/latest', (req, res) => {
+  const status = getLatestStatus();
+  
+  // Transform the backend status object to the frontend's LatestReading type
+  const latestReading = {
+    waterLevel: status.metrics.waterDepthCm,
+    tankPercentage: Math.round(status.metrics.percentage),
+    flowRate: status.metrics.flowRate || 0,
+    temperature: status.metrics.temperature || 24.5,
+    dailyUsage: status.metrics.dailyUsage || 0,
+    leakStatus: status.leakAnalysis.isLeakDetected ? "Leak Detected" : "Normal",
+    timestamp: status.timestamp
+  };
+
+  res.json(latestReading);
+});
+
+/**
  * @route GET /api/tank/history
- * @desc Retrieve historical readings
- * @query {number} limit - Maximum number of history items to retrieve (default: 100)
+ * @desc Retrieve historical readings (Mapped for frontend HistoryReading type)
  */
 router.get('/history', async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 100;
   try {
     const history = await getHistory(limit);
-    res.json(history);
+    
+    // Map internal history to frontend HistoryReading type
+    const mappedHistory = history.map(h => ({
+      timestamp: h.timestamp,
+      waterLevel: h.waterDepthCm,
+      flowRate: h.flowRate || 0,
+      temperature: h.temperature || 24.5,
+      tankPercentage: Math.round(h.percentage),
+      dailyUsage: h.dailyUsage || 0,
+      leakStatus: "Normal" // Simplified for history for now
+    }));
+
+    res.json(mappedHistory);
   } catch (error) {
     res.status(500).json({ 
       success: false, 
