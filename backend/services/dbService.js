@@ -64,6 +64,9 @@ export async function initDb() {
         water_depth_cm REAL,
         percentage REAL,
         volume_liters REAL,
+        flow_rate REAL,
+        daily_usage REAL,
+        temperature REAL,
         sensor_status TEXT,
         error TEXT
       )
@@ -100,8 +103,8 @@ export async function initDb() {
  */
 export async function saveReading(reading) {
   const sql = `
-    INSERT INTO readings (timestamp, is_valid, distance_cm, water_depth_cm, percentage, volume_liters, sensor_status, error)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO readings (timestamp, is_valid, distance_cm, water_depth_cm, percentage, volume_liters, flow_rate, daily_usage, temperature, sensor_status, error)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const params = [
     reading.timestamp,
@@ -110,6 +113,9 @@ export async function saveReading(reading) {
     reading.waterDepthCm,
     reading.percentage,
     reading.volumeLiters,
+    reading.flowRate,
+    reading.dailyUsage,
+    reading.temperature,
     reading.sensorStatus,
     reading.error
   ];
@@ -140,12 +146,12 @@ export async function saveAlert(alert) {
  */
 export async function fetchHistory(limit = 100) {
   const sql = `
-    SELECT * FROM readings 
-    ORDER BY timestamp DESC 
+    SELECT * FROM readings
+    ORDER BY timestamp DESC
     LIMIT ?
   `;
   const rows = await all(sql, [limit]);
-  
+
   // Map back to JavaScript object names (snake_case database to camelCase API structure)
   return rows.map(r => ({
     timestamp: r.timestamp,
@@ -154,6 +160,9 @@ export async function fetchHistory(limit = 100) {
     waterDepthCm: r.water_depth_cm,
     percentage: r.percentage,
     volumeLiters: r.volume_liters,
+    flowRate: r.flow_rate,
+    dailyUsage: r.daily_usage,
+    temperature: r.temperature,
     sensorStatus: r.sensor_status,
     error: r.error
   })).reverse(); // Return in chronological order
@@ -164,8 +173,8 @@ export async function fetchHistory(limit = 100) {
  */
 export async function fetchActiveAlerts() {
   const sql = `
-    SELECT * FROM alerts 
-    WHERE resolved = 0 
+    SELECT * FROM alerts
+    WHERE resolved = 0
     ORDER BY timestamp DESC
   `;
   const rows = await all(sql);
@@ -185,8 +194,8 @@ export async function fetchActiveAlerts() {
 export async function resolveAllAlerts() {
   const now = new Date().toISOString();
   const sql = `
-    UPDATE alerts 
-    SET resolved = 1, resolved_at = ? 
+    UPDATE alerts
+    SET resolved = 1, resolved_at = ?
     WHERE resolved = 0
   `;
   return run(sql, [now]);
@@ -198,8 +207,8 @@ export async function resolveAllAlerts() {
 export async function resolveAlertByType(type) {
   const now = new Date().toISOString();
   const sql = `
-    UPDATE alerts 
-    SET resolved = 1, resolved_at = ? 
+    UPDATE alerts
+    SET resolved = 1, resolved_at = ?
     WHERE type = ? AND resolved = 0
   `;
   return run(sql, [now, type]);
