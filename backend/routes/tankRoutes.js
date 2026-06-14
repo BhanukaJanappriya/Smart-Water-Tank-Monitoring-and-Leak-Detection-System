@@ -50,6 +50,7 @@ router.get('/latest', (req, res) => {
     flowRate: status.metrics.flowRate || 0,
     temperature: status.metrics.temperature || 24.5,
     dailyUsage: status.metrics.dailyUsage || 0,
+    rawDistance: status.sensor.rawDistanceCm,
     leakStatus: status.leakAnalysis.isLeakDetected ? "Leak Detected" : "Normal",
     timestamp: status.timestamp
   };

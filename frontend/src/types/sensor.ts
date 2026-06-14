@@ -13,6 +13,7 @@ export interface LatestReading {
   flowRate: number; // L/min - current flow rate
   temperature: number; // degC - water temperature
   dailyUsage: number; // L - total water used today
+  rawDistance: number; // cm - actual sensor distance reading
   leakStatus: LeakStatus;
   timestamp: string; // ISO timestamp
 }

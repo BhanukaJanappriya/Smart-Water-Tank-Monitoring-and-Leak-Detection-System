@@ -50,9 +50,9 @@ export default function Dashboard() {
       </section>
 
       {/* KPI Cards */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
         {loading && !latest
-          ? Array.from({ length: 6 }).map((_, i) => <KpiCardSkeleton key={i} />)
+          ? Array.from({ length: 7 }).map((_, i) => <KpiCardSkeleton key={i} />)
           : latest && (
               <>
                 <KpiCard
@@ -69,9 +69,17 @@ export default function Dashboard() {
                   label="Water Height"
                   value={latest.waterLevel}
                   unit="cm"
-                  description="Distance from sensor"
+                  description="Calculated water depth"
                   icon={Waves}
                   trend={computeTrend(latest.waterLevel, previous?.waterLevel)}
+                />
+                <KpiCard
+                  label="Sensor Distance"
+                  value={latest.rawDistance}
+                  unit="cm"
+                  description="Raw ultrasonic reading"
+                  icon={Activity}
+                  trend={computeTrend(latest.rawDistance, previous?.rawDistance)}
                 />
                 <KpiCard
                   label="Flow Rate"
