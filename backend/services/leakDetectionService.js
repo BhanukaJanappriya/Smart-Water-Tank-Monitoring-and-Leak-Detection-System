@@ -8,9 +8,13 @@ const MAX_HISTORY_LIMIT = 1000; // Prevent memory leak
 let activeAlerts = [];
 let latestProcessedStatus = null;
 
+// New state for flow and usage calculation
+let dailyUsageLiters = 0;
+let lastResetDate = new Date().toDateString();
+
 /**
  * Calculates water tank metrics based on the distance reading.
- * 
+ *
  * @param {number|null} distanceCm - Distance from sensor to water level in cm
  * @param {string} sensorStatus - Status message from ESP32
  * @returns {object} Processed metrics
@@ -57,12 +61,12 @@ export function calculateMetrics(distanceCm, sensorStatus) {
 /**
  * Performs linear regression on historical readings to detect steady, continuous leaks.
  * Looks at the last N minutes of data to find a steady linear decrease.
- * 
+ *
  * @returns {object|null} Leak evaluation details or null if not enough data
  */
 function evaluateLeak() {
   const { pollIntervalMs, leakThresholdCmPerMin } = config;
-  
+
   // We want to analyze data from the last 3 minutes
   const threeMinutesInMs = 3 * 60 * 1000;
   const minRequiredReadings = Math.max(6, Math.round(threeMinutesInMs / pollIntervalMs));
@@ -142,15 +146,44 @@ function evaluateLeak() {
 
 /**
  * Process a new reading from the ESP32, update history, log to database, and check for alerts.
- * 
+ *
  * @param {object} rawReading - Raw response object from ESP32 service
  * @returns {Promise<object>} The fully processed status object
  */
 export async function addReading(rawReading) {
   const metrics = calculateMetrics(
     rawReading.success && rawReading.data ? rawReading.data.distance_cm : null,
-    rawReading.success && rawReading.data ? rawReading.data.status : (rawReading.error || 'Connection Failed')
+    rawReading.success && rawReading.data ? rawReading.data.status : (rawReading.error || 'Connection Failed')  
   );
+
+  // Calculate Flow Rate and Daily Usage
+  let flowRate = 0;
+  const now = new Date();
+  const today = now.toDateString();
+
+  // Reset daily usage at midnight
+  if (today !== lastResetDate) {
+    dailyUsageLiters = 0;
+    lastResetDate = today;
+  }
+
+  if (metrics.isValid && readingsHistory.length > 0) {
+    const lastReading = readingsHistory[readingsHistory.length - 1];
+    if (lastReading.isValid) {
+      const timeDiffMin = (new Date(rawReading.timestamp) - new Date(lastReading.timestamp)) / (1000 * 60);
+      const volDiffLiters = lastReading.volumeLiters - metrics.volumeLiters;
+
+      if (timeDiffMin > 0) {
+        // flowRate in L/min. Positive means water is being used/leaving the tank.
+        flowRate = Math.max(0, volDiffLiters / timeDiffMin);
+        
+        // If volume decreased, add to daily usage
+        if (volDiffLiters > 0) {
+          dailyUsageLiters += volDiffLiters;
+        }
+      }
+    }
+  }
 
   const processedReading = {
     timestamp: rawReading.timestamp,
@@ -159,6 +192,9 @@ export async function addReading(rawReading) {
     waterDepthCm: metrics.waterDepthCm,
     percentage: metrics.percentage,
     volumeLiters: metrics.volumeLiters,
+    flowRate: Math.round(flowRate * 100) / 100,
+    dailyUsage: Math.round(dailyUsageLiters * 10) / 10,
+    temperature: rawReading.success && rawReading.data?.temperature_c !== undefined ? rawReading.data.temperature_c : 24.5,
     sensorStatus: rawReading.success && rawReading.data ? rawReading.data.status : 'offline',
     error: metrics.error || null
   };
@@ -253,7 +289,7 @@ export async function addReading(rawReading) {
     timestamp: rawReading.timestamp,
     sensor: {
       device: rawReading.data?.device || 'ESP32',
-      sensor: rawReading.data?.sensor || 'HC-SR04',
+      sensor: rawReading.data?.sensor || 'HC-SR04/DS18B20',
       status: processedReading.sensorStatus,
       rawDistanceCm: processedReading.distanceCm
     },
@@ -261,9 +297,12 @@ export async function addReading(rawReading) {
       waterDepthCm: processedReading.waterDepthCm,
       percentage: processedReading.percentage,
       volumeLiters: processedReading.volumeLiters,
-      isValid: processedReading.isValid
+      isValid: processedReading.isValid,
+      flowRate: processedReading.flowRate,
+      dailyUsage: processedReading.dailyUsage,
+      temperature: processedReading.temperature
     },
-    leakAnalysis: leakAnalysis || { isLeakDetected: false, message: 'Calibrating / Insufficient data points' },
+    leakAnalysis: leakAnalysis || { isLeakDetected: false, message: 'Calibrating / Insufficient data points' }, 
     alerts: activeAlerts
   };
 
@@ -283,7 +322,7 @@ export function getLatestStatus() {
     timestamp: new Date().toISOString(),
     sensor: {
       device: 'ESP32',
-      sensor: 'HC-SR04',
+      sensor: 'HC-SR04/DS18B20',
       status: 'No data gathered yet',
       rawDistanceCm: null
     },
@@ -291,7 +330,10 @@ export function getLatestStatus() {
       waterDepthCm: 0,
       percentage: 0,
       volumeLiters: 0,
-      isValid: false
+      isValid: false,
+      flowRate: 0,
+      dailyUsage: 0,
+      temperature: 24.5
     },
     leakAnalysis: {
       isLeakDetected: false,
@@ -359,7 +401,7 @@ export async function loadHistoryFromDb() {
         timestamp: lastReading.timestamp,
         sensor: {
           device: 'ESP32',
-          sensor: 'HC-SR04',
+          sensor: 'HC-SR04/DS18B20',
           status: lastReading.sensorStatus,
           rawDistanceCm: lastReading.distanceCm
         },
@@ -367,11 +409,14 @@ export async function loadHistoryFromDb() {
           waterDepthCm: lastReading.waterDepthCm,
           percentage: lastReading.percentage,
           volumeLiters: lastReading.volumeLiters,
-          isValid: lastReading.isValid
+          isValid: lastReading.isValid,
+          flowRate: lastReading.flowRate || 0,
+          dailyUsage: lastReading.dailyUsage || 0,
+          temperature: lastReading.temperature || 24.5
         },
-        leakAnalysis: { 
-          isLeakDetected: activeAlerts.some(a => a.type === 'LEAK_DETECTED'), 
-          message: 'Restored from SQLite database' 
+        leakAnalysis: {
+          isLeakDetected: activeAlerts.some(a => a.type === 'LEAK_DETECTED'),
+          message: 'Restored from SQLite database'
         },
         alerts: activeAlerts
       };

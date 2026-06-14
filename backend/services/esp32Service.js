@@ -32,9 +32,10 @@ export async function fetchESP32Data() {
       success: true,
       data: {
         device: data.device || 'ESP32',
-        sensor: data.sensor || 'HC-SR04',
+        sensor: data.sensor || 'HC-SR04/DS18B20',
         distance_cm: data.distance_cm !== undefined ? data.distance_cm : null,
-        status: data.status || 'ok'
+        temperature_c: data.temperature_c !== undefined ? data.temperature_c : null,
+        status: data.ultrasonic_status || data.status || 'ok'
       },
       timestamp
     };
