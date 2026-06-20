@@ -16,13 +16,12 @@ interface RecentActivityTableProps {
   pageSize?: number;
 }
 
-type SortKey = "timestamp" | "waterLevel" | "flowRate" | "temperature";
+type SortKey = "timestamp" | "waterLevel" | "temperature";
 type SortDirection = "asc" | "desc";
 
 const columns: { key: SortKey; label: string }[] = [
   { key: "timestamp", label: "Timestamp" },
   { key: "waterLevel", label: "Water Level (cm)" },
-  { key: "flowRate", label: "Flow (L/min)" },
   { key: "temperature", label: "Temperature (°C)" },
 ];
 
@@ -112,8 +111,7 @@ export function RecentActivityTable({ data, loading, pageSize = 8 }: RecentActiv
                       <TableCell className="whitespace-nowrap font-medium text-foreground">
                         {formatDateTime(row.timestamp)}
                       </TableCell>
-                      <TableCell>{formatNumber(row.waterLevel)} cm</TableCell>
-                      <TableCell>{formatNumber(row.flowRate, 2)} L/min</TableCell>
+                       <TableCell>{formatNumber(row.waterLevel)} cm</TableCell>
                       <TableCell>{formatNumber(row.temperature)}°C</TableCell>
                       <TableCell>
                         <Badge variant={severityVariant[leakSeverity(status)]}>{status}</Badge>

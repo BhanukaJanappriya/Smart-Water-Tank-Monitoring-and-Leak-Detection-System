@@ -64,8 +64,6 @@ export async function initDb() {
         water_depth_cm REAL,
         percentage REAL,
         volume_liters REAL,
-        flow_rate REAL,
-        daily_usage REAL,
         temperature REAL,
         sensor_status TEXT,
         error TEXT
@@ -103,8 +101,8 @@ export async function initDb() {
  */
 export async function saveReading(reading) {
   const sql = `
-    INSERT INTO readings (timestamp, is_valid, distance_cm, water_depth_cm, percentage, volume_liters, flow_rate, daily_usage, temperature, sensor_status, error)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO readings (timestamp, is_valid, distance_cm, water_depth_cm, percentage, volume_liters, temperature, sensor_status, error)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const params = [
     reading.timestamp,
@@ -113,8 +111,6 @@ export async function saveReading(reading) {
     reading.waterDepthCm,
     reading.percentage,
     reading.volumeLiters,
-    reading.flowRate,
-    reading.dailyUsage,
     reading.temperature,
     reading.sensorStatus,
     reading.error
@@ -160,8 +156,6 @@ export async function fetchHistory(limit = 100) {
     waterDepthCm: r.water_depth_cm,
     percentage: r.percentage,
     volumeLiters: r.volume_liters,
-    flowRate: r.flow_rate,
-    dailyUsage: r.daily_usage,
     temperature: r.temperature,
     sensorStatus: r.sensor_status,
     error: r.error

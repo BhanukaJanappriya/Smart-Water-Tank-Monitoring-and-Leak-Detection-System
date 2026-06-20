@@ -10,9 +10,7 @@ export type ConnectionState = "online" | "offline" | "checking";
 export interface LatestReading {
   waterLevel: number; // cm - current water height
   tankPercentage: number; // % - tank fill level
-  flowRate: number; // L/min - current flow rate
   temperature: number; // degC - water temperature
-  dailyUsage: number; // L - total water used today
   leakStatus: LeakStatus;
   timestamp: string; // ISO timestamp
 }
@@ -20,10 +18,8 @@ export interface LatestReading {
 export interface HistoryReading {
   timestamp: string;
   waterLevel: number;
-  flowRate: number;
   temperature: number;
   tankPercentage?: number;
-  dailyUsage?: number;
   leakStatus?: LeakStatus;
 }
 

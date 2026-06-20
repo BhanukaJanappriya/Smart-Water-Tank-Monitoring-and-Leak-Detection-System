@@ -47,9 +47,7 @@ router.get('/latest', (req, res) => {
   const latestReading = {
     waterLevel: status.metrics.waterDepthCm,
     tankPercentage: Math.round(status.metrics.percentage),
-    flowRate: status.metrics.flowRate || 0,
     temperature: status.metrics.temperature || 24.5,
-    dailyUsage: status.metrics.dailyUsage || 0,
     leakStatus: status.leakAnalysis.isLeakDetected ? "Leak Detected" : "Normal",
     timestamp: status.timestamp
   };
@@ -70,10 +68,8 @@ router.get('/history', async (req, res) => {
     const mappedHistory = history.map(h => ({
       timestamp: h.timestamp,
       waterLevel: h.waterDepthCm,
-      flowRate: h.flowRate || 0,
       temperature: h.temperature || 24.5,
       tankPercentage: Math.round(h.percentage),
-      dailyUsage: h.dailyUsage || 0,
       leakStatus: "Normal" // Simplified for history for now
     }));
 
