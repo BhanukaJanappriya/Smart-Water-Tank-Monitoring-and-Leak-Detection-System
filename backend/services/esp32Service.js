@@ -28,14 +28,25 @@ export async function fetchESP32Data() {
 
     const data = await response.json();
 
+    const hasSensors = data.sensors !== undefined;
+    const distance_cm = hasSensors && data.sensors.ultrasonic !== undefined
+      ? data.sensors.ultrasonic.distance_cm
+      : (data.distance_cm !== undefined ? data.distance_cm : null);
+    const temperature_c = hasSensors && data.sensors.temperature !== undefined
+      ? data.sensors.temperature.temperature_c
+      : (data.temperature_c !== undefined ? data.temperature_c : null);
+    const status = hasSensors && data.sensors.ultrasonic !== undefined
+      ? data.sensors.ultrasonic.status
+      : (data.ultrasonic_status || data.status || 'ok');
+
     return {
       success: true,
       data: {
         device: data.device || 'ESP32',
         sensor: data.sensor || 'HC-SR04/DS18B20',
-        distance_cm: data.distance_cm !== undefined ? data.distance_cm : null,
-        temperature_c: data.temperature_c !== undefined ? data.temperature_c : null,
-        status: data.ultrasonic_status || data.status || 'ok'
+        distance_cm,
+        temperature_c,
+        status
       },
       timestamp
     };
