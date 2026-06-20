@@ -43,7 +43,7 @@ npm install
 ### 2. Configure Environment Variables
 A `.env` file is generated in the root of the `backend` folder. You can customize the settings:
 - `PORT`: Port the Express server runs on (default: `3000`).
-- `ESP32_URL`: The IP address of your ESP32 (e.g., `http://10.234.106.74`).
+- `ESP32_URL`: The IP address or local URL of your ESP32 (e.g., `http://watertank.local` or `http://192.168.8.162`).
 - `POLL_INTERVAL_MS`: How often the backend polls the ESP32 (default: `10000` ms).
 - `TANK_HEIGHT_CM`: Physical height of the tank.
 - `TANK_FULL_DISTANCE_CM`: Measured distance when the tank is 100% full (minimum clearance distance from sensor to water).
@@ -72,7 +72,7 @@ If you don't have the ESP32 connected or active:
    ```
 
 ### Option B: Production / Physical IoT Run
-Ensure your ESP32 is powered on and connected to the hotspot, then configure its IP in `.env` (e.g., `ESP32_URL=http://10.234.106.74`).
+Ensure your ESP32 is powered on and connected to the hotspot, then configure its URL in `.env` (e.g., `ESP32_URL=http://watertank.local`).
 Start the backend server:
 ```bash
 npm start

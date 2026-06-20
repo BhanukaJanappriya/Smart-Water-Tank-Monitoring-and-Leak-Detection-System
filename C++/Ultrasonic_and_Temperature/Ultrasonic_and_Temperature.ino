@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <WebServer.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -137,6 +138,14 @@ void setup() {
   Serial.println("Connected to hotspot!");
   Serial.print("Visit this URL: http://");
   Serial.println(WiFi.localIP());
+
+  // Set up mDNS responder
+  if (!MDNS.begin("watertank")) {
+    Serial.println("Error setting up MDNS responder!");
+  } else {
+    Serial.println("mDNS responder started");
+    Serial.println("Visit this URL: http://watertank.local");
+  }
 
   server.on("/", handleRoot);
   server.begin();
