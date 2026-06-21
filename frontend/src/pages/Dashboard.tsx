@@ -62,7 +62,7 @@ export default function Dashboard() {
                   label="Water Height"
                   value={latest.waterLevel}
                   unit="cm"
-                  description="Distance from sensor"
+                  description="Height of water in tank"
                   icon={Waves}
                   trend={computeTrend(latest.waterLevel, previous?.waterLevel)}
                 />
