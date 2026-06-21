@@ -25,6 +25,10 @@ const server = http.createServer((req, res) => {
         temperature: {
           temperature_c: 24.5,
           status: "ok"
+        },
+        rain: {
+          is_raining: Math.random() > 0.8, // 20% chance of rain in mock runs
+          status: "ok"
         }
       }
     };

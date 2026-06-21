@@ -3,15 +3,13 @@
  * These mirror the JSON shapes returned by the ESP32 backend REST API.
  */
 
-export type LeakStatus = "Normal" | "Warning" | "Leak Detected";
-
 export type ConnectionState = "online" | "offline" | "checking";
 
 export interface LatestReading {
   waterLevel: number; // cm - current water height
   tankPercentage: number; // % - tank fill level
   temperature: number; // degC - water temperature
-  leakStatus: LeakStatus;
+  isRaining: boolean;
   timestamp: string; // ISO timestamp
 }
 
@@ -20,7 +18,7 @@ export interface HistoryReading {
   waterLevel: number;
   temperature: number;
   tankPercentage?: number;
-  leakStatus?: LeakStatus;
+  isRaining?: boolean;
 }
 
 export interface SystemStatus {

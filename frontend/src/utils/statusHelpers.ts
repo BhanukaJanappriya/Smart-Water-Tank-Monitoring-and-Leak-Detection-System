@@ -1,18 +1,9 @@
-import type { ConnectionState, LeakStatus, Trend } from "@/types/sensor";
+import type { ConnectionState, Trend } from "@/types/sensor";
 
 export type SeverityLevel = "success" | "warning" | "danger" | "neutral";
 
-export function leakSeverity(status: LeakStatus | undefined): SeverityLevel {
-  switch (status) {
-    case "Leak Detected":
-      return "danger";
-    case "Warning":
-      return "warning";
-    case "Normal":
-      return "success";
-    default:
-      return "neutral";
-  }
+export function rainSeverity(isRaining: boolean | undefined): SeverityLevel {
+  return isRaining ? "warning" : "success";
 }
 
 export type TemperatureLevel = "Safe" | "Hot" | "Critical";
