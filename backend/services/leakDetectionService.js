@@ -31,11 +31,11 @@ export function calculateMetrics(distanceCm, sensorStatus) {
   }
 
   // Calculate the max possible water depth based on calibration thresholds
-  const maxWaterDepthCm = tankEmptyDistanceCm - tankFullDistanceCm;
+  const maxWaterDepthCm = tankHeightCm - tankFullDistanceCm;
 
   // Calculate actual water depth: empty distance minus current distance
   // Bounded between 0 and maxWaterDepthCm
-  let waterDepthCm = tankEmptyDistanceCm - distanceCm;
+  let waterDepthCm = tankHeightCm - distanceCm;
   waterDepthCm = Math.max(0, Math.min(maxWaterDepthCm, waterDepthCm));
 
   // Calculate percentage full (0% to 100%)

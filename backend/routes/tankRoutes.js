@@ -151,4 +151,46 @@ router.post('/config', (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/tank/raw/ultrasonic
+ * @desc Get raw ultrasonic sensor data (distance in cm)
+ */
+router.get('/raw/ultrasonic', (req, res) => {
+  const status = getLatestStatus();
+  res.json({
+    sensor: 'Ultrasonic Sensor',
+    rawDistanceCm: status.sensor.rawDistanceCm !== undefined ? status.sensor.rawDistanceCm : null,
+    status: status.sensor.status || 'offline',
+    timestamp: status.timestamp
+  });
+});
+
+/**
+ * @route GET /api/tank/raw/temperature
+ * @desc Get raw temperature sensor data (temperature in C)
+ */
+router.get('/raw/temperature', (req, res) => {
+  const status = getLatestStatus();
+  res.json({
+    sensor: 'Temperature Sensor',
+    temperatureC: status.metrics.temperature !== undefined ? status.metrics.temperature : null,
+    status: status.sensor.status || 'offline',
+    timestamp: status.timestamp
+  });
+});
+
+/**
+ * @route GET /api/tank/raw/rain
+ * @desc Get raw rain detection sensor data (raining status)
+ */
+router.get('/raw/rain', (req, res) => {
+  const status = getLatestStatus();
+  res.json({
+    sensor: 'Raindrop Sensor',
+    isRaining: status.metrics.isRaining !== undefined ? status.metrics.isRaining : false,
+    status: status.sensor.status || 'offline',
+    timestamp: status.timestamp
+  });
+});
+
 export default router;
