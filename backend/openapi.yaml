@@ -7,26 +7,19 @@ servers:
   - url: http://localhost:3000
     description: Local development backend server
 paths:
-  /api/tank/status:
+  /api/tank/latest:
     get:
-      summary: Get latest tank level metrics and leak status
-      description: Returns the latest processed reading, including water depth, percentage full, volume, and active alerts.
-      parameters:
-        - in: query
-          name: fetch
-          schema:
-            type: boolean
-          required: false
-          description: If true, bypasses the background cache and forces an immediate real-time fetch from the ESP32.
+      summary: Get latest processed sensor metrics
+      description: Returns the most recent processed sensor metrics formatted for dashboard cards.
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TankStatus'
+                $ref: '#/components/schemas/LatestReading'
         '500':
-          description: Internal server error (e.g., when forced fetch fails)
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -35,7 +28,7 @@ paths:
   /api/tank/history:
     get:
       summary: Get historical readings
-      description: Returns a list of the most recent readings logged by the backend's background poll task.
+      description: Returns chronological readings for chart rendering.
       parameters:
         - in: query
           name: limit
@@ -52,78 +45,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ReadingLog'
-
-  /api/tank/alerts:
-    get:
-      summary: Get active alerts
-      description: Returns all currently active alerts, such as water level critical levels or potential leak detections.
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Alert'
-
-  /api/tank/alerts/clear:
-    post:
-      summary: Clear active alerts
-      description: Manually clears any active level or leak warnings from memory.
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                example:
-                  success: true
-                  message: Active alerts cleared successfully.
-
-  /api/tank/config:
-    get:
-      summary: Get current tank physical and calibration configuration
-      description: Returns the active configuration parameters used for processing distance values and running leak tests.
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TankConfig'
-    post:
-      summary: Update configuration dynamically
-      description: Updates physical dimensions or leak rate thresholds in-memory.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TankConfigUpdate'
-      responses:
-        '200':
-          description: Configuration updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  currentConfig:
-                    $ref: '#/components/schemas/TankConfig'
-        '400':
-          description: Invalid parameters provided
+                  $ref: '#/components/schemas/HistoryReading'
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -132,248 +56,176 @@ paths:
   /api/tank/raw/ultrasonic:
     get:
       summary: Get raw ultrasonic distance reading
-      description: Returns the latest raw distance value polled from the ESP32 sensor.
+      description: Returns raw ultrasonic distance values (rawDistanceCm).
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  sensor:
-                    type: string
-                    example: HC-SR04
-                  rawDistanceCm:
-                    type: number
-                    nullable: true
-                    example: 4.0
-                  status:
-                    type: string
-                    example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-                    example: '2026-06-21T13:40:00.000Z'
+                $ref: '#/components/schemas/RawUltrasonicReading'
 
   /api/tank/raw/temperature:
     get:
       summary: Get raw temperature reading
-      description: Returns the latest raw temperature value polled from the DS18B20 sensor.
+      description: Returns raw temperature measurements (temperatureC).
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  sensor:
-                    type: string
-                    example: DS18B20
-                  temperatureC:
-                    type: number
-                    nullable: true
-                    example: 28.1
-                  status:
-                    type: string
-                    example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-                    example: '2026-06-21T13:40:00.000Z'
+                $ref: '#/components/schemas/RawTemperatureReading'
 
   /api/tank/raw/rain:
     get:
       summary: Get raw rain detection status
-      description: Returns the latest raw rain status value polled from the FC-37 sensor.
+      description: Returns raw precipitation status values (isRaining).
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  sensor:
-                    type: string
-                    example: FC-37
-                  isRaining:
-                    type: boolean
-                    example: false
-                  status:
-                    type: string
-                    example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-                    example: '2026-06-21T13:40:00.000Z'
+                $ref: '#/components/schemas/RawRainReading'
 
 components:
   schemas:
-    TankStatus:
+    LatestReading:
       type: object
+      required:
+        - waterLevel
+        - tankPercentage
+        - temperature
+        - isRaining
+        - timestamp
       properties:
-        timestamp:
-          type: string
-          format: date-time
-          example: '2026-06-13T08:00:00.000Z'
-        sensor:
-          type: object
-          properties:
-            device:
-              type: string
-              example: 'ESP32'
-            sensor:
-              type: string
-              example: 'HC-SR04'
-            status:
-              type: string
-              example: 'ok'
-            rawDistanceCm:
-              type: number
-              nullable: true
-              example: 45.2
-        metrics:
-          type: object
-          properties:
-            waterDepthCm:
-              type: number
-              example: 44.8
-            percentage:
-              type: number
-              example: 56.0
-            volumeLiters:
-              type: number
-              example: 126.7
-            isValid:
-              type: boolean
-              example: true
-        leakAnalysis:
-          type: object
-          properties:
-            isLeakDetected:
-              type: boolean
-              example: false
-            correlation:
-              type: number
-              nullable: true
-              example: -0.98
-            slopeCmPerMin:
-              type: number
-              nullable: true
-              example: -0.12
-            rateOfDropCmPerMin:
-              type: number
-              nullable: true
-              example: 0.12
-            dataPointsCount:
-              type: integer
-              example: 18
-            message:
-              type: string
-              example: 'No leak detected'
-        alerts:
-          type: array
-          items:
-            $ref: '#/components/schemas/Alert'
-
-    ReadingLog:
-      type: object
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-        isValid:
+        waterLevel:
+          type: number
+          description: Current water depth in centimeters
+          example: 44.8
+        tankPercentage:
+          type: integer
+          description: Water depth as percentage of full capacity (rounded to nearest integer)
+          example: 56
+        temperature:
+          type: number
+          description: Current temperature in Celsius
+          example: 24.5
+        isRaining:
           type: boolean
-        distanceCm:
-          type: number
-          nullable: true
-        waterDepthCm:
-          type: number
-        percentage:
-          type: number
-        volumeLiters:
-          type: number
-        sensorStatus:
-          type: string
-        error:
-          type: string
-          nullable: true
-
-    Alert:
-      type: object
-      properties:
-        type:
-          type: string
-          enum: [LEAK_DETECTED, CRITICAL_LOW_WATER, CRITICAL_HIGH_WATER, SENSOR_OFFLINE]
-          example: 'LEAK_DETECTED'
-        severity:
-          type: string
-          enum: [LOW, MEDIUM, HIGH, CRITICAL]
-          example: 'CRITICAL'
-        message:
-          type: string
-          example: 'Potential water leak detected! Water level is dropping steadily.'
+          description: Status indicating whether it is raining
+          example: false
         timestamp:
           type: string
           format: date-time
-        details:
-          type: object
+          example: '2026-06-21T13:40:00.000Z'
+
+    HistoryReading:
+      type: object
+      required:
+        - waterLevel
+        - tankPercentage
+        - temperature
+        - isRaining
+        - timestamp
+      properties:
+        waterLevel:
+          type: number
+          description: Historical water depth in centimeters
+          example: 44.8
+        tankPercentage:
+          type: integer
+          description: Historical water depth as percentage of full capacity
+          example: 56
+        temperature:
+          type: number
+          description: Historical temperature in Celsius
+          example: 24.5
+        isRaining:
+          type: boolean
+          description: Historical rain status
+          example: false
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-06-21T13:40:00.000Z'
+
+    RawUltrasonicReading:
+      type: object
+      required:
+        - sensor
+        - status
+        - timestamp
+      properties:
+        sensor:
+          type: string
+          example: 'Ultrasonic Sensor'
+        rawDistanceCm:
+          type: number
           nullable: true
-
-    TankConfig:
-      type: object
-      properties:
-        port:
-          type: integer
-          example: 3000
-        esp32Url:
+          example: 4.0
+        status:
           type: string
-          example: 'http://10.234.106.74'
-        pollIntervalMs:
-          type: integer
-          example: 10000
-        tankHeightCm:
-          type: number
-          example: 100.0
-        tankFullDistanceCm:
-          type: number
-          example: 10.0
-        tankEmptyDistanceCm:
-          type: number
-          example: 90.0
-        tankRadiusCm:
-          type: number
-          example: 30.0
-        leakThresholdCmPerMin:
-          type: number
-          example: 0.1
-
-    TankConfigUpdate:
-      type: object
-      properties:
-        esp32Url:
+          example: ok
+        timestamp:
           type: string
-        pollIntervalMs:
-          type: integer
-        tankHeightCm:
+          format: date-time
+          example: '2026-06-21T13:40:00.000Z'
+
+    RawTemperatureReading:
+      type: object
+      required:
+        - sensor
+        - status
+        - timestamp
+      properties:
+        sensor:
+          type: string
+          example: 'Temperature Sensor'
+        temperatureC:
           type: number
-        tankFullDistanceCm:
-          type: number
-        tankEmptyDistanceCm:
-          type: number
-        tankRadiusCm:
-          type: number
-        leakThresholdCmPerMin:
-          type: number
+          nullable: true
+          example: 28.1
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-06-21T13:40:00.000Z'
+
+    RawRainReading:
+      type: object
+      required:
+        - sensor
+        - isRaining
+        - status
+        - timestamp
+      properties:
+        sensor:
+          type: string
+          example: 'Raindrop Sensor'
+        isRaining:
+          type: boolean
+          example: false
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-06-21T13:40:00.000Z'
 
     ErrorResponse:
       type: object
+      required:
+        - success
+        - error
       properties:
         success:
           type: boolean
           example: false
         error:
           type: string
-          example: 'ESP32 device is offline'
+          example: 'Database query failed'
