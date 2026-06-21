@@ -22,3 +22,14 @@ export async function fetchHistory(limit = 50): Promise<HistoryReading[]> {
   });
   return data;
 }
+
+/**
+ * Fetches daily water usage
+ * GET /api/tank/usage/daily
+ */
+export async function fetchDailyUsage(days = 7): Promise<any[]> {
+  const { data } = await apiClient.get<any[]>("/usage/daily", {
+    params: { days },
+  });
+  return data;
+}
