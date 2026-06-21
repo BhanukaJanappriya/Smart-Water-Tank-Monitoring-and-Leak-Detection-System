@@ -35,6 +35,9 @@ export async function fetchESP32Data() {
     const temperature_c = hasSensors && data.sensors.temperature !== undefined
       ? data.sensors.temperature.temperature_c
       : (data.temperature_c !== undefined ? data.temperature_c : null);
+    const is_raining = hasSensors && data.sensors.rain !== undefined
+      ? data.sensors.rain.is_raining
+      : (data.is_raining !== undefined ? data.is_raining : false);
     const status = hasSensors && data.sensors.ultrasonic !== undefined
       ? data.sensors.ultrasonic.status
       : (data.ultrasonic_status || data.status || 'ok');
@@ -46,6 +49,7 @@ export async function fetchESP32Data() {
         sensor: data.sensor || 'HC-SR04/DS18B20',
         distance_cm,
         temperature_c,
+        is_raining,
         status
       },
       timestamp

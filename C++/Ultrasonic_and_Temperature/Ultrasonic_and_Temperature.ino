@@ -16,6 +16,9 @@ const char* password = "5DFC24D3";
 // ─── Temperature Sensor Pin ───────────────────────────────────────────────
 #define TEMP_PIN 4
 
+// ─── Raindrop Detection Sensor Pin ─────────────────────────────────────────
+#define RAIN_PIN 18
+
 // ─── Delays ───────────────────────────────────────────────────────────────
 const int setup_delay      = 1000;
 const int wifi_setup_delay = 500;
@@ -49,6 +52,12 @@ float getTemperature() {
   tempSensor.requestTemperatures();
   float temp = tempSensor.getTempCByIndex(0);
   return temp;
+}
+
+// ─── Read Raindrop Sensor ──────────────────────────────────────────────────
+bool isRaining() {
+  // Raindrop detection sensor DO pin outputs LOW when rain is detected
+  return digitalRead(RAIN_PIN) == LOW;
 }
 
 // ─── Print Sensor Values to Serial ────────────────────────────────────────
@@ -109,6 +118,12 @@ void handleRoot() {
     json += "\"temperature_c\":" + String(temp, 1) + ",";
     json += "\"status\":\"ok\"";
   }
+  json += "},";
+
+  // Rain sensor data
+  json += "\"rain\":{";
+  json += "\"is_raining\":" + String(isRaining() ? "true" : "false") + ",";
+  json += "\"status\":\"ok\"";
   json += "}";
 
   json += "}"; // End of sensors
@@ -124,6 +139,7 @@ void setup() {
 
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
+  pinMode(RAIN_PIN, INPUT);
   tempSensor.begin();
 
   Serial.println("Connecting to hotspot...");

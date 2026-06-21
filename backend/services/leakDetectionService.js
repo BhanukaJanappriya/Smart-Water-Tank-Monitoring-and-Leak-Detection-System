@@ -163,6 +163,7 @@ export async function addReading(rawReading) {
     volumeLiters: metrics.volumeLiters,
     temperature: rawReading.success && rawReading.data?.temperature_c !== undefined ? rawReading.data.temperature_c : 24.5,
     sensorStatus: rawReading.success && rawReading.data ? rawReading.data.status : 'offline',
+    isRaining: rawReading.success && rawReading.data ? (rawReading.data.is_raining || false) : false,
     error: metrics.error || null
   };
 
@@ -179,23 +180,8 @@ export async function addReading(rawReading) {
     console.error('[Leak Detection] Error saving reading to SQLite:', err.message);
   }
 
-  // Run leak evaluation
-  const leakAnalysis = evaluateLeak();
-  const isLeakAlertActive = leakAnalysis ? leakAnalysis.isLeakDetected : false;
-
   // Manage Alerts
   const newAlerts = [];
-
-  // 1. Leak Alert
-  if (isLeakAlertActive) {
-    newAlerts.push({
-      type: 'LEAK_DETECTED',
-      severity: 'CRITICAL',
-      message: `Potential water leak detected! Water level is dropping steadily at a rate of ${leakAnalysis.rateOfDropCmPerMin} cm/min.`,
-      timestamp: rawReading.timestamp,
-      details: leakAnalysis
-    });
-  }
 
   // 2. Critical Level Alerts
   if (metrics.isValid) {
@@ -265,9 +251,9 @@ export async function addReading(rawReading) {
       percentage: processedReading.percentage,
       volumeLiters: processedReading.volumeLiters,
       isValid: processedReading.isValid,
-      temperature: processedReading.temperature
+      temperature: processedReading.temperature,
+      isRaining: processedReading.isRaining
     },
-    leakAnalysis: leakAnalysis || { isLeakDetected: false, message: 'Calibrating / Insufficient data points' }, 
     alerts: activeAlerts
   };
 
@@ -296,11 +282,8 @@ export function getLatestStatus() {
       percentage: 0,
       volumeLiters: 0,
       isValid: false,
-      temperature: 24.5
-    },
-    leakAnalysis: {
-      isLeakDetected: false,
-      message: 'No readings recorded yet'
+      temperature: 24.5,
+      isRaining: false
     },
     alerts: []
   };

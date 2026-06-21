@@ -1,10 +1,10 @@
 import { useOutletContext } from "react-router-dom";
-import { Gauge, ShieldAlert, Thermometer, Waves } from "lucide-react";
+import { Gauge, CloudRain, Thermometer, Waves } from "lucide-react";
 import type { DashboardOutletContext } from "@/components/layout/AppLayout";
 import { KpiCard } from "@/components/cards/KpiCard";
 import { KpiCardSkeleton } from "@/components/cards/KpiCardSkeleton";
 import { AnimatedTank } from "@/components/tank/AnimatedTank";
-import { LeakDetectionPanel } from "@/components/alerts/LeakDetectionPanel";
+import { RainStatusPanel } from "@/components/alerts/RainStatusPanel";
 import { TemperaturePanel } from "@/components/status/TemperaturePanel";
 import { SystemStatusPanel } from "@/components/status/SystemStatusPanel";
 import { WaterLevelChart } from "@/components/charts/WaterLevelChart";
@@ -13,7 +13,7 @@ import { RecentActivityTable } from "@/components/common/RecentActivityTable";
 import { ErrorState } from "@/components/common/ErrorState";
 import { Card, CardContent } from "@/components/ui/card";
 import { useHistory } from "@/hooks/useHistory";
-import { computeTrend, leakSeverity, tankFillSeverity, temperatureSeverity } from "@/utils/statusHelpers";
+import { computeTrend, rainSeverity, tankFillSeverity, temperatureSeverity } from "@/utils/statusHelpers";
 import { toChartPoints } from "@/utils/chartHelpers";
 
 export default function Dashboard() {
@@ -76,18 +76,18 @@ export default function Dashboard() {
                   trend={computeTrend(latest.temperature, previous?.temperature)}
                 />
                 <KpiCard
-                  label="Leak Status"
+                  label="Rain Status"
                   value={0}
-                  valueOverride={latest.leakStatus}
-                  description="Live leak detection"
-                  icon={ShieldAlert}
-                  severity={leakSeverity(latest.leakStatus)}
+                  valueOverride={latest.isRaining ? "Raining" : "No Rain"}
+                  description="Precipitation detection"
+                  icon={CloudRain}
+                  severity={rainSeverity(latest.isRaining)}
                 />
               </>
             )}
       </section>
 
-      {/* Tank visualization + Leak detection */}
+      {/* Tank visualization + Rain status */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="animate-fade-in-up lg:col-span-1">
           <CardContent className="flex flex-col items-center justify-center p-6">
@@ -100,7 +100,7 @@ export default function Dashboard() {
         </Card>
 
         <div className="lg:col-span-2">
-          {latest && <LeakDetectionPanel status={latest.leakStatus} timestamp={latest.timestamp} />}
+          {latest && <RainStatusPanel isRaining={latest.isRaining} timestamp={latest.timestamp} />}
         </div>
       </section>
 
