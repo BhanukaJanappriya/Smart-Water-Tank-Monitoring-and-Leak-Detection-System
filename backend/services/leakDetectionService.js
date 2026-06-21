@@ -8,9 +8,7 @@ const MAX_HISTORY_LIMIT = 1000; // Prevent memory leak
 let activeAlerts = [];
 let latestProcessedStatus = null;
 
-// New state for flow and usage calculation
-let dailyUsageLiters = 0;
-let lastResetDate = new Date().toDateString();
+// State for leak detection and caching
 
 /**
  * Calculates water tank metrics based on the distance reading.
@@ -33,11 +31,11 @@ export function calculateMetrics(distanceCm, sensorStatus) {
   }
 
   // Calculate the max possible water depth based on calibration thresholds
-  const maxWaterDepthCm = tankEmptyDistanceCm - tankFullDistanceCm;
+  const maxWaterDepthCm = tankHeightCm - tankFullDistanceCm;
 
   // Calculate actual water depth: empty distance minus current distance
   // Bounded between 0 and maxWaterDepthCm
-  let waterDepthCm = tankEmptyDistanceCm - distanceCm;
+  let waterDepthCm = tankHeightCm - distanceCm;
   waterDepthCm = Math.max(0, Math.min(maxWaterDepthCm, waterDepthCm));
 
   // Calculate percentage full (0% to 100%)
@@ -156,35 +154,6 @@ export async function addReading(rawReading) {
     rawReading.success && rawReading.data ? rawReading.data.status : (rawReading.error || 'Connection Failed')  
   );
 
-  // Calculate Flow Rate and Daily Usage
-  let flowRate = 0;
-  const now = new Date();
-  const today = now.toDateString();
-
-  // Reset daily usage at midnight
-  if (today !== lastResetDate) {
-    dailyUsageLiters = 0;
-    lastResetDate = today;
-  }
-
-  if (metrics.isValid && readingsHistory.length > 0) {
-    const lastReading = readingsHistory[readingsHistory.length - 1];
-    if (lastReading.isValid) {
-      const timeDiffMin = (new Date(rawReading.timestamp) - new Date(lastReading.timestamp)) / (1000 * 60);
-      const volDiffLiters = lastReading.volumeLiters - metrics.volumeLiters;
-
-      if (timeDiffMin > 0) {
-        // flowRate in L/min. Positive means water is being used/leaving the tank.
-        flowRate = Math.max(0, volDiffLiters / timeDiffMin);
-        
-        // If volume decreased, add to daily usage
-        if (volDiffLiters > 0) {
-          dailyUsageLiters += volDiffLiters;
-        }
-      }
-    }
-  }
-
   const processedReading = {
     timestamp: rawReading.timestamp,
     isValid: metrics.isValid,
@@ -192,10 +161,9 @@ export async function addReading(rawReading) {
     waterDepthCm: metrics.waterDepthCm,
     percentage: metrics.percentage,
     volumeLiters: metrics.volumeLiters,
-    flowRate: Math.round(flowRate * 100) / 100,
-    dailyUsage: Math.round(dailyUsageLiters * 10) / 10,
     temperature: rawReading.success && rawReading.data?.temperature_c !== undefined ? rawReading.data.temperature_c : 24.5,
     sensorStatus: rawReading.success && rawReading.data ? rawReading.data.status : 'offline',
+    isRaining: rawReading.success && rawReading.data ? (rawReading.data.is_raining || false) : false,
     error: metrics.error || null
   };
 
@@ -212,23 +180,8 @@ export async function addReading(rawReading) {
     console.error('[Leak Detection] Error saving reading to SQLite:', err.message);
   }
 
-  // Run leak evaluation
-  const leakAnalysis = evaluateLeak();
-  const isLeakAlertActive = leakAnalysis ? leakAnalysis.isLeakDetected : false;
-
   // Manage Alerts
   const newAlerts = [];
-
-  // 1. Leak Alert
-  if (isLeakAlertActive) {
-    newAlerts.push({
-      type: 'LEAK_DETECTED',
-      severity: 'CRITICAL',
-      message: `Potential water leak detected! Water level is dropping steadily at a rate of ${leakAnalysis.rateOfDropCmPerMin} cm/min.`,
-      timestamp: rawReading.timestamp,
-      details: leakAnalysis
-    });
-  }
 
   // 2. Critical Level Alerts
   if (metrics.isValid) {
@@ -298,11 +251,9 @@ export async function addReading(rawReading) {
       percentage: processedReading.percentage,
       volumeLiters: processedReading.volumeLiters,
       isValid: processedReading.isValid,
-      flowRate: processedReading.flowRate,
-      dailyUsage: processedReading.dailyUsage,
-      temperature: processedReading.temperature
+      temperature: processedReading.temperature,
+      isRaining: processedReading.isRaining
     },
-    leakAnalysis: leakAnalysis || { isLeakDetected: false, message: 'Calibrating / Insufficient data points' }, 
     alerts: activeAlerts
   };
 
@@ -331,13 +282,8 @@ export function getLatestStatus() {
       percentage: 0,
       volumeLiters: 0,
       isValid: false,
-      flowRate: 0,
-      dailyUsage: 0,
-      temperature: 24.5
-    },
-    leakAnalysis: {
-      isLeakDetected: false,
-      message: 'No readings recorded yet'
+      temperature: 24.5,
+      isRaining: false
     },
     alerts: []
   };
@@ -410,8 +356,6 @@ export async function loadHistoryFromDb() {
           percentage: lastReading.percentage,
           volumeLiters: lastReading.volumeLiters,
           isValid: lastReading.isValid,
-          flowRate: lastReading.flowRate || 0,
-          dailyUsage: lastReading.dailyUsage || 0,
           temperature: lastReading.temperature || 24.5
         },
         leakAnalysis: {

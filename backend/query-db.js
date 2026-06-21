@@ -58,6 +58,8 @@ db.serialize(() => {
           'Depth (cm)': r.water_depth_cm,
           'Percent (%)': `${r.percentage}%`,
           'Volume (L)': r.volume_liters,
+          'Temp (°C)': r.temperature !== null ? `${r.temperature}°C` : 'N/A',
+          'Raining': r.is_raining === 1 ? '🌧️ Yes' : '☀️ No',
           Status: r.sensor_status
         }));
         console.table(formatted);

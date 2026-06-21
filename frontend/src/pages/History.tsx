@@ -3,18 +3,15 @@ import type { DashboardOutletContext } from "@/components/layout/AppLayout";
 import { useHistory } from "@/hooks/useHistory";
 import { WaterLevelChart } from "@/components/charts/WaterLevelChart";
 import { TemperatureChart } from "@/components/charts/TemperatureChart";
-import { FlowRateChart } from "@/components/charts/FlowRateChart";
-import { DailyUsageChart } from "@/components/charts/DailyUsageChart";
 import { RecentActivityTable } from "@/components/common/RecentActivityTable";
 import { ErrorState } from "@/components/common/ErrorState";
-import { aggregateDailyUsage, toChartPoints } from "@/utils/chartHelpers";
+import { toChartPoints } from "@/utils/chartHelpers";
 
 export default function History() {
   const { systemStatus } = useOutletContext<DashboardOutletContext>();
   const { data, loading, error, retry } = useHistory({ limit: 200, pollIntervalMs: 20000 });
 
   const chartPoints = toChartPoints(data);
-  const dailyUsageData = aggregateDailyUsage(data);
 
   return (
     <div className="space-y-8">
@@ -32,8 +29,6 @@ export default function History() {
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <WaterLevelChart data={chartPoints} loading={loading} />
             <TemperatureChart data={chartPoints} loading={loading} />
-            <FlowRateChart data={chartPoints} loading={loading} />
-            <DailyUsageChart data={dailyUsageData} loading={loading} />
           </section>
 
           <section>

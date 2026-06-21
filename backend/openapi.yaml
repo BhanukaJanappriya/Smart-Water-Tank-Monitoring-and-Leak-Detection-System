@@ -129,6 +129,86 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/tank/raw/ultrasonic:
+    get:
+      summary: Get raw ultrasonic distance reading
+      description: Returns the latest raw distance value polled from the ESP32 sensor.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sensor:
+                    type: string
+                    example: HC-SR04
+                  rawDistanceCm:
+                    type: number
+                    nullable: true
+                    example: 4.0
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-06-21T13:40:00.000Z'
+
+  /api/tank/raw/temperature:
+    get:
+      summary: Get raw temperature reading
+      description: Returns the latest raw temperature value polled from the DS18B20 sensor.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sensor:
+                    type: string
+                    example: DS18B20
+                  temperatureC:
+                    type: number
+                    nullable: true
+                    example: 28.1
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-06-21T13:40:00.000Z'
+
+  /api/tank/raw/rain:
+    get:
+      summary: Get raw rain detection status
+      description: Returns the latest raw rain status value polled from the FC-37 sensor.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sensor:
+                    type: string
+                    example: FC-37
+                  isRaining:
+                    type: boolean
+                    example: false
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-06-21T13:40:00.000Z'
+
 components:
   schemas:
     TankStatus:

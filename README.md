@@ -93,8 +93,8 @@ To run the backend server and its local ESP32 simulation utility:
 
 ## 🔌 IoT ESP32 Firmware
 
-A sketch example of the firmware is provided in the `C++/Ultrasonic_sensor.ino` file. It connects to a local WiFi/hotspot, initializes the trigger and echo pins for the ultrasonic sensor, and spins up a web server on port 80.
-When the backend requests `http://<ESP32_IP>/`, it responds with:
+A sketch example of the firmware is provided in the `C++/Ultrasonic_and_Temperature/Ultrasonic_and_Temperature.ino` file. It connects to a local WiFi/hotspot, initializes the trigger and echo pins for the ultrasonic sensor, and spins up a web server on port 80 with mDNS enabled.
+When the backend requests `http://watertank.local/` (or `http://<ESP32_IP>/`), it responds with:
 ```json
 {
   "device": "ESP32",
@@ -130,7 +130,8 @@ backend/
   routes/       - Express API routes
   services/     - ESP32 polling, leak detection, database services
 C++/
-  Ultrasonic_sensor.ino  - ESP32 firmware (sensor reading & API)
+  Ultrasonic_and_Temperature/
+    Ultrasonic_and_Temperature.ino  - ESP32 firmware (sensor reading & API with mDNS)
 ```
 
 ---

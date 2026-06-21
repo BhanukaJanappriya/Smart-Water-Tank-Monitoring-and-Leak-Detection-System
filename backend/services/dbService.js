@@ -64,13 +64,20 @@ export async function initDb() {
         water_depth_cm REAL,
         percentage REAL,
         volume_liters REAL,
-        flow_rate REAL,
-        daily_usage REAL,
         temperature REAL,
         sensor_status TEXT,
+        is_raining INTEGER DEFAULT 0,
         error TEXT
       )
     `);
+
+    // Ensure is_raining column exists on legacy databases
+    try {
+      await run(`ALTER TABLE readings ADD COLUMN is_raining INTEGER DEFAULT 0`);
+      console.log('[Database] Column is_raining verified/added to readings table.');
+    } catch (err) {
+      // Column already exists, safe to ignore
+    }
 
     // Create timestamp index for faster queries
     await run(`
@@ -103,8 +110,8 @@ export async function initDb() {
  */
 export async function saveReading(reading) {
   const sql = `
-    INSERT INTO readings (timestamp, is_valid, distance_cm, water_depth_cm, percentage, volume_liters, flow_rate, daily_usage, temperature, sensor_status, error)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO readings (timestamp, is_valid, distance_cm, water_depth_cm, percentage, volume_liters, temperature, sensor_status, is_raining, error)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const params = [
     reading.timestamp,
@@ -113,10 +120,9 @@ export async function saveReading(reading) {
     reading.waterDepthCm,
     reading.percentage,
     reading.volumeLiters,
-    reading.flowRate,
-    reading.dailyUsage,
     reading.temperature,
     reading.sensorStatus,
+    reading.isRaining ? 1 : 0,
     reading.error
   ];
   return run(sql, params);
@@ -160,10 +166,9 @@ export async function fetchHistory(limit = 100) {
     waterDepthCm: r.water_depth_cm,
     percentage: r.percentage,
     volumeLiters: r.volume_liters,
-    flowRate: r.flow_rate,
-    dailyUsage: r.daily_usage,
     temperature: r.temperature,
     sensorStatus: r.sensor_status,
+    isRaining: r.is_raining === 1,
     error: r.error
   })).reverse(); // Return in chronological order
 }

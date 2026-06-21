@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime, formatNumber } from "@/utils/formatters";
-import { leakSeverity } from "@/utils/statusHelpers";
+import { rainSeverity } from "@/utils/statusHelpers";
 import type { HistoryReading } from "@/types/sensor";
 
 interface RecentActivityTableProps {
@@ -16,13 +16,12 @@ interface RecentActivityTableProps {
   pageSize?: number;
 }
 
-type SortKey = "timestamp" | "waterLevel" | "flowRate" | "temperature";
+type SortKey = "timestamp" | "waterLevel" | "temperature";
 type SortDirection = "asc" | "desc";
 
 const columns: { key: SortKey; label: string }[] = [
   { key: "timestamp", label: "Timestamp" },
   { key: "waterLevel", label: "Water Level (cm)" },
-  { key: "flowRate", label: "Flow (L/min)" },
   { key: "temperature", label: "Temperature (°C)" },
 ];
 
@@ -101,22 +100,23 @@ export function RecentActivityTable({ data, loading, pageSize = 8 }: RecentActiv
                       </button>
                     </TableHead>
                   ))}
-                  <TableHead>Leak Status</TableHead>
+                  <TableHead>Rain Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pageRows.map((row, idx) => {
-                  const status = row.leakStatus ?? "Normal";
+                  const raining = row.isRaining ?? false;
                   return (
                     <TableRow key={`${row.timestamp}-${idx}`}>
                       <TableCell className="whitespace-nowrap font-medium text-foreground">
                         {formatDateTime(row.timestamp)}
                       </TableCell>
-                      <TableCell>{formatNumber(row.waterLevel)} cm</TableCell>
-                      <TableCell>{formatNumber(row.flowRate, 2)} L/min</TableCell>
+                       <TableCell>{formatNumber(row.waterLevel)} cm</TableCell>
                       <TableCell>{formatNumber(row.temperature)}°C</TableCell>
                       <TableCell>
-                        <Badge variant={severityVariant[leakSeverity(status)]}>{status}</Badge>
+                        <Badge variant={severityVariant[rainSeverity(raining)]}>
+                          {raining ? "Raining" : "No Rain"}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   );

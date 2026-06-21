@@ -16,9 +16,21 @@ const server = http.createServer((req, res) => {
 
     const responseData = {
       device: "ESP32_SIMULATOR",
-      sensor: "HC-SR04_MOCK",
-      distance_cm: Math.round(currentDistanceCm * 10) / 10,
-      status: "ok"
+      status: "ok",
+      sensors: {
+        ultrasonic: {
+          distance_cm: Math.round(currentDistanceCm * 10) / 10,
+          status: "ok"
+        },
+        temperature: {
+          temperature_c: 24.5,
+          status: "ok"
+        },
+        rain: {
+          is_raining: Math.random() > 0.8, // 20% chance of rain in mock runs
+          status: "ok"
+        }
+      }
     };
 
     res.writeHead(200, { 'Content-Type': 'application/json' });

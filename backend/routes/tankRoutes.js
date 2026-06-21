@@ -47,10 +47,8 @@ router.get('/latest', (req, res) => {
   const latestReading = {
     waterLevel: status.metrics.waterDepthCm,
     tankPercentage: Math.round(status.metrics.percentage),
-    flowRate: status.metrics.flowRate || 0,
     temperature: status.metrics.temperature || 24.5,
-    dailyUsage: status.metrics.dailyUsage || 0,
-    leakStatus: status.leakAnalysis.isLeakDetected ? "Leak Detected" : "Normal",
+    isRaining: status.metrics.isRaining || false,
     timestamp: status.timestamp
   };
 
@@ -70,11 +68,9 @@ router.get('/history', async (req, res) => {
     const mappedHistory = history.map(h => ({
       timestamp: h.timestamp,
       waterLevel: h.waterDepthCm,
-      flowRate: h.flowRate || 0,
       temperature: h.temperature || 24.5,
       tankPercentage: Math.round(h.percentage),
-      dailyUsage: h.dailyUsage || 0,
-      leakStatus: "Normal" // Simplified for history for now
+      isRaining: h.isRaining || false
     }));
 
     res.json(mappedHistory);
@@ -153,6 +149,48 @@ router.post('/config', (req, res) => {
       error: 'Invalid values provided: ' + error.message 
     });
   }
+});
+
+/**
+ * @route GET /api/tank/raw/ultrasonic
+ * @desc Get raw ultrasonic sensor data (distance in cm)
+ */
+router.get('/raw/ultrasonic', (req, res) => {
+  const status = getLatestStatus();
+  res.json({
+    sensor: 'Ultrasonic Sensor',
+    rawDistanceCm: status.sensor.rawDistanceCm !== undefined ? status.sensor.rawDistanceCm : null,
+    status: status.sensor.status || 'offline',
+    timestamp: status.timestamp
+  });
+});
+
+/**
+ * @route GET /api/tank/raw/temperature
+ * @desc Get raw temperature sensor data (temperature in C)
+ */
+router.get('/raw/temperature', (req, res) => {
+  const status = getLatestStatus();
+  res.json({
+    sensor: 'Temperature Sensor',
+    temperatureC: status.metrics.temperature !== undefined ? status.metrics.temperature : null,
+    status: status.sensor.status || 'offline',
+    timestamp: status.timestamp
+  });
+});
+
+/**
+ * @route GET /api/tank/raw/rain
+ * @desc Get raw rain detection sensor data (raining status)
+ */
+router.get('/raw/rain', (req, res) => {
+  const status = getLatestStatus();
+  res.json({
+    sensor: 'Raindrop Sensor',
+    isRaining: status.metrics.isRaining !== undefined ? status.metrics.isRaining : false,
+    status: status.sensor.status || 'offline',
+    timestamp: status.timestamp
+  });
 });
 
 export default router;
