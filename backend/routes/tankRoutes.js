@@ -1,6 +1,7 @@
 import express from 'express';
 import config from '../config.js';
 import { fetchESP32Data } from '../services/esp32Service.js';
+import { fetchDailyUsage } from '../services/dbService.js';
 import { 
   getLatestStatus, 
   getHistory, 
@@ -78,6 +79,23 @@ router.get('/history', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to retrieve history: ' + error.message 
+    });
+  }
+});
+
+/**
+ * @route GET /api/tank/usage/daily
+ * @desc Retrieve daily usage statistics
+ */
+router.get('/usage/daily', async (req, res) => {
+  const days = parseInt(req.query.days, 10) || 7;
+  try {
+    const usage = await fetchDailyUsage(days);
+    res.json(usage);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve daily usage: ' + error.message
     });
   }
 });

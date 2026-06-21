@@ -220,6 +220,42 @@ export async function resolveAlertByType(type) {
 }
 
 /**
+ * Fetches daily usage by calculating volume drops per day
+ */
+export async function fetchDailyUsage(days = 7) {
+  const sql = `
+    SELECT 
+      date(timestamp) as date,
+      volume_liters
+    FROM readings
+    WHERE is_valid = 1
+    ORDER BY timestamp ASC
+  `;
+  const rows = await all(sql);
+  
+  const dailyUsage = {};
+  let lastVolume = null;
+  
+  for (const row of rows) {
+    if (!dailyUsage[row.date]) {
+      dailyUsage[row.date] = 0;
+    }
+    if (lastVolume !== null && lastVolume > row.volume_liters) {
+      dailyUsage[row.date] += (lastVolume - row.volume_liters);
+    }
+    lastVolume = row.volume_liters;
+  }
+  
+  return Object.keys(dailyUsage)
+    .sort()
+    .slice(-days)
+    .map(date => ({
+      date,
+      usageLiters: Math.round(dailyUsage[date] * 100) / 100
+    }));
+}
+
+/**
  * Closes the database connection safely
  */
 export function close() {

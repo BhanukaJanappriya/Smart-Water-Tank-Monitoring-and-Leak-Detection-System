@@ -36,3 +36,8 @@ export interface Trend {
   value: number; // absolute change since previous reading
   percent: number; // percent change since previous reading
 }
+
+export interface DailyUsage {
+  date: string;
+  usageLiters: number;
+}

@@ -1,5 +1,5 @@
 import { useOutletContext } from "react-router-dom";
-import { Gauge, CloudRain, Thermometer, Waves } from "lucide-react";
+import { Gauge, CloudRain, Thermometer, Waves, Droplets } from "lucide-react";
 import type { DashboardOutletContext } from "@/components/layout/AppLayout";
 import { KpiCard } from "@/components/cards/KpiCard";
 import { KpiCardSkeleton } from "@/components/cards/KpiCardSkeleton";
@@ -9,18 +9,22 @@ import { TemperaturePanel } from "@/components/status/TemperaturePanel";
 import { SystemStatusPanel } from "@/components/status/SystemStatusPanel";
 import { WaterLevelChart } from "@/components/charts/WaterLevelChart";
 import { TemperatureChart } from "@/components/charts/TemperatureChart";
+import { DailyUsageChart } from "@/components/charts/DailyUsageChart";
 import { RecentActivityTable } from "@/components/common/RecentActivityTable";
 import { ErrorState } from "@/components/common/ErrorState";
 import { Card, CardContent } from "@/components/ui/card";
 import { useHistory } from "@/hooks/useHistory";
+import { useDailyUsage } from "@/hooks/useDailyUsage";
 import { computeTrend, rainSeverity, tankFillSeverity, temperatureSeverity } from "@/utils/statusHelpers";
 import { toChartPoints } from "@/utils/chartHelpers";
 
 export default function Dashboard() {
   const { latest, previous, loading, error, retry, systemStatus } = useOutletContext<DashboardOutletContext>();
   const { data: history, loading: historyLoading } = useHistory({ limit: 50, pollIntervalMs: 15000 });
+  const { data: dailyUsage, loading: dailyUsageLoading } = useDailyUsage(7);
 
   const chartPoints = toChartPoints(history);
+  const currentDayUsage = dailyUsage.length > 0 ? dailyUsage[dailyUsage.length - 1].usageLiters : 0;
 
   if (error && !latest) {
     return (
@@ -43,9 +47,9 @@ export default function Dashboard() {
       </section>
 
       {/* KPI Cards */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-5">
         {loading && !latest
-          ? Array.from({ length: 4 }).map((_, i) => <KpiCardSkeleton key={i} />)
+          ? Array.from({ length: 5 }).map((_, i) => <KpiCardSkeleton key={i} />)
           : latest && (
               <>
                 <KpiCard
@@ -83,6 +87,14 @@ export default function Dashboard() {
                   icon={CloudRain}
                   severity={rainSeverity(latest.isRaining)}
                 />
+                <KpiCard
+                  label="Today's Usage"
+                  value={currentDayUsage}
+                  unit="L"
+                  description="Water consumed today"
+                  icon={Droplets}
+                  severity="neutral"
+                />
               </>
             )}
       </section>
@@ -107,6 +119,7 @@ export default function Dashboard() {
       {/* Charts */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <WaterLevelChart data={chartPoints} loading={historyLoading} />
+        <DailyUsageChart data={dailyUsage} loading={dailyUsageLoading} />
         <TemperatureChart data={chartPoints} loading={historyLoading} />
       </section>
 
