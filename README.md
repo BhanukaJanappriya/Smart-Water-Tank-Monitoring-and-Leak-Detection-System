@@ -25,13 +25,13 @@ The system consists of three main parts:
 
 ## ✨ Features
 
-- 📊 **Live KPI cards** — water level, tank fill %, flow rate, temperature, and daily usage with animated counters and trend indicators
-- 🌊 **Animated tank visualization** — SVG wave animation that reflects the current fill percentage in real time
-- 📈 **Interactive charts** — water level, temperature, flow rate, and daily usage history powered by Recharts
-- 🚨 **Leak detection panel** — Normal / Warning / Leak states with a pulsing alert glow for critical conditions
-- 📉 **Statistical Leak Detection** — linear regression based algorithm on the backend to accurately identify leaks
-- 🟢 **System & connection status** — live online/offline detection with graceful error and retry states
-- 🕘 **Recent activity table** — sortable, paginated sensor history log
+- 📊 **Live KPI cards** : water level, tank fill %, flow rate, temperature, and daily usage with animated counters and trend indicators
+- 🌊 **Animated tank visualization** : SVG wave animation that reflects the current fill percentage in real time
+- 📈 **Interactive charts** : water level, temperature, flow rate, and daily usage history powered by Recharts
+- 🚨 **Leak detection panel** : Normal / Warning / Leak states with a pulsing alert glow for critical conditions
+- 📉 **Statistical Leak Detection** : linear regression based algorithm on the backend to accurately identify leaks
+- 🟢 **System & connection status** : live online/offline detection with graceful error and retry states
+- 🕘 **Recent activity table** : sortable, paginated sensor history log
 - 🌗 **Light & dark themes** with persisted user preference
 
 ---
