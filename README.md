@@ -55,8 +55,8 @@ The app runs on `http://localhost:5173` by default.
 ### API Configuration
 
 The dashboard expects a REST API exposing:
-- `GET /api/latest` — the most recent sensor reading
-- `GET /api/history?limit=50` — historical readings for charts and the activity table
+- `GET /api/latest` - the most recent sensor reading
+- `GET /api/history?limit=50` - historical readings for charts and the activity table
 
 By default the API base URL is `http://localhost:3000/api` (assuming backend runs on 3000). To point at a different backend, create a `.env.local` file based on [`.env.example`](.env.example):
 ```bash
