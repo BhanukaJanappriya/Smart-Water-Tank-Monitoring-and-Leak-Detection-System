@@ -148,8 +148,6 @@ Run from inside the [`frontend/`](frontend) directory:
 | `npm run lint`     | Run ESLint                             |
 | `npm run mock`     | Run a local mock API server           |
 
----
 
-## 📄 License
 
-This project is licensed under the MIT License.
+
